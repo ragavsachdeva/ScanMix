@@ -32,7 +32,6 @@ parser.add_argument('--load_state_dict', default=None, type=str)
 parser.add_argument('--cudaid', default=0)
 parser.add_argument('--dividemix_only', action='store_true')
 parser.add_argument('--lr_sl', type=float, default=None)
-parser.add_argument('--noise_data_dir', default=None, type=str)
 
 parser.add_argument('--config_env',
                     help='Config file for the environment')

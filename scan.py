@@ -21,7 +21,6 @@ FLAGS.add_argument('--config_env', help='Location of path config file')
 FLAGS.add_argument('--config_exp', help='Location of experiments config file')
 FLAGS.add_argument('--r', default=0, type=float, help='noise ratio')
 FLAGS.add_argument('--noise_mode',  default='sym')
-FLAGS.add_argument('--noise_data_dir', default=None, type=str)
 FLAGS.add_argument('--cudaid', default=0)
 
 args = FLAGS.parse_args()

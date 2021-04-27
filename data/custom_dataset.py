@@ -113,7 +113,6 @@ class NoisyDataset(Dataset):
         self.dataset = dataset 
         self.probability = meta_info['probability']
         self.mode = meta_info['mode']
-        self.noise_data_dir = meta_info['noise_data_dir']
 
         r = meta_info['r']
         pred = meta_info['pred']

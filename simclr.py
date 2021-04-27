@@ -28,7 +28,6 @@ parser.add_argument('--config_exp',
                     help='Config file for the experiment')
 parser.add_argument('--r', default=0, type=float, help='noise ratio')
 parser.add_argument('--noise_mode',  default='sym')
-parser.add_argument('--noise_data_dir', default=None, type=str)
 parser.add_argument('--cudaid', default=0)
 args = parser.parse_args()
 

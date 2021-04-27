@@ -1,8 +1,3 @@
-"""
-Authors: Wouter Van Gansbeke, Simon Vandenhende
-Licensed under the CC BY-NC 4.0 license (https://creativecommons.org/licenses/by-nc/4.0/)
-"""
-
 class EMA(object):
     def __init__(self, model, alpha=0.999):
         self.shadow = {k: v.clone().detach() for k, v in model.state_dict().items()}

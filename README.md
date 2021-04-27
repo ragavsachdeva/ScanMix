@@ -5,7 +5,15 @@ Disclaimer: We're currently in the process of refactoring and uploading code to 
 The pipeline for running ScanMix is the following:
 
 Step 1:
+
+For cifar
+
 `python simclr.py --config_env configs/env.yml --config_exp configs/pretext/<config_file.yml>`
+
+
+For webvision
+
+`python moco.py --dataset webvision --config_env configs/env.yml --config_exp configs/pretext/<config_file.yml>`
 
 Step 2:
 

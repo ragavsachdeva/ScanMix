@@ -39,4 +39,4 @@ Step 2:
 
 Step 3:
 
-`python ScanMix_parallel.py --config_env configs/env.yml --config_exp configs/scanmix/<config_file.yml>`
+`python ScanMix_parallel.py --config_env configs/env.yml --config_exp configs/scanmix/<config_file.yml> --cudaids 0 1`

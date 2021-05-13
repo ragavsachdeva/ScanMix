@@ -27,7 +27,6 @@ parser.add_argument('--lambda_u', default=0, type=float, help='weight for unsupe
 parser.add_argument('--seed', default=123)
 parser.add_argument('--load_state_dict', default=None, type=str)
 parser.add_argument('--cudaids', nargs=2, type=int)
-parser.add_argument('--lr_sl', type=float, required=True)
 
 parser.add_argument('--config_env',
                     help='Config file for the environment')
@@ -65,8 +64,8 @@ def create_model(device):
     model = model.to(device)
     return model
 
-test_log = open(os.path.join(checkpoint_dir, 'acc_{}.txt'.format(args.lr_sl)), 'w')
-stats_log = open(os.path.join(checkpoint_dir, 'stats_{}.txt'.format(args.lr_sl)), 'w') 
+test_log = open(os.path.join(checkpoint_dir, 'acc_{}.txt'.format(p['lr_sl'])), 'w')
+stats_log = open(os.path.join(checkpoint_dir, 'stats_{}.txt'.format(p['lr_sl'])), 'w') 
 
 def get_loader(p, mode, meta_info):
     if mode == 'test':
@@ -192,9 +191,9 @@ def main():
             p2.join()
 
             for param_group in optimizer1.param_groups:
-                param_group['lr'] = args.lr_sl    
+                param_group['lr'] = p['lr_sl']    
             for param_group in optimizer2.param_groups:
-                param_group['lr'] = args.lr_sl  
+                param_group['lr'] = p['lr_sl']  
 
             print('\n[SL] Train')
             meta_info['predicted_labels'] = pl_2   

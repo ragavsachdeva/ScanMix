@@ -12,7 +12,6 @@ import numpy as np
 import copy
 import pdb
 from pathlib import Path
-import matplotlib.pyplot as plt
 from utils.config import create_config
 from utils.common_config import get_train_transformations, get_val_transformations, get_scan_transformations,\
                                 get_train_dataset, get_train_dataloader,\
@@ -242,8 +241,8 @@ def main():
         acc = q1.get()
         p1.join()
 
-        print('\nEpoch:%d   Accuracy:%.2f\n'%(epoch,acc))
-        test_log.write('Epoch:%d   Accuracy:%.2f\n'%(epoch,acc))
+        print('\nEpoch:%d   Accuracy:%.2f (%.2f)\n'%(epoch,acc[0],acc[1]))
+        test_log.write('Epoch:%d   Accuracy:%.2f (%.2f)\n'%(epoch,acc[0],acc[1]))
         test_log.flush() 
 
         if (epoch+1) % 5 == 0:

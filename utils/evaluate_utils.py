@@ -8,7 +8,7 @@ from sklearn import metrics
 from scipy.optimize import linear_sum_assignment
 from losses.losses import entropy
 import pdb
-
+import torchnet
 
 @torch.no_grad()
 def contrastive_evaluate(val_loader, model, memory_bank):
@@ -203,6 +203,8 @@ def scanmix_test(epoch,net1,net2,test_loader,device):
 
 @torch.no_grad()
 def scanmix_big_test(epoch,net1,net2,test_loader,device,q):
+    acc_meter = torchnet.meter.ClassErrorMeter(topk=[1,5], accuracy=True)
+    acc_meter.reset()
     net1.eval()
     net2.eval()
     correct = 0
@@ -214,8 +216,6 @@ def scanmix_big_test(epoch,net1,net2,test_loader,device,q):
             outputs2 = net2(inputs, forward_pass='dm')           
             outputs = outputs1+outputs2
             _, predicted = torch.max(outputs, 1)            
-                       
-            total += targets.size(0)
-            correct += predicted.eq(targets).cpu().sum().item()                 
-    acc = 100.*correct/total
-    q.put(acc)
+            acc_meter.add(outputs,targets)           
+    accs = acc_meter.value()
+    q.put(accs)

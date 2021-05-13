@@ -19,8 +19,10 @@ def create_config(config_file_env, config_file_exp, meta_info=None):
 
     # Set paths for pretext task (These directories are needed in every stage)
     base_dir = os.path.join(root_dir, cfg['train_db_name'])
-    noise_specific = 'r={}_{}'.format(meta_info['r'], meta_info['noise_mode'])
     pretext_dir = os.path.join(base_dir, 'pretext')
+    noise_specific = ''
+    if cfg['to_noisy_dataset']:
+        noise_specific = 'r={}_{}'.format(meta_info['r'], meta_info['noise_mode'])
     pretext_dir = os.path.join(pretext_dir, noise_specific)
     mkdir_if_missing(base_dir)
     mkdir_if_missing(pretext_dir)
@@ -58,4 +60,4 @@ def create_config(config_file_env, config_file_exp, meta_info=None):
         cfg['scanmix_checkpoint'] = os.path.join(scanmix_dir, 'checkpoint.pth.tar')
         cfg['scanmix_model'] = os.path.join(scanmix_dir, 'model.pth.tar')
 
-    return cfg 
+    return cfg

@@ -74,13 +74,6 @@ def get_loader(p, mode, meta_info):
         val_dataset = get_val_dataset(p, val_transformations, meta_info=meta_info)
         val_dataloader = get_val_dataloader(p, val_dataset)
         return val_dataloader
-
-    elif mode == 'imagenet_val':
-        meta_info['mode'] = 'imagenet_val'
-        val_transformations = get_val_transformations(p)
-        val_dataset = get_val_dataset(p, val_transformations, meta_info=meta_info)
-        val_dataloader = get_val_dataloader(p, val_dataset)
-        return val_dataloader
     
     elif mode == 'train':
         meta_info['mode'] = 'labeled'
@@ -219,8 +212,7 @@ def main():
         net1_clone.load_state_dict(net1.state_dict())
         net2_clone.load_state_dict(net2.state_dict())
 
-        webvision_test_loader = get_loader(p, 'test', meta_info)
-        imagenet_test_loader = get_loader(p, 'imagenet_val', meta_info)
+        test_loader = get_loader(p, 'test', meta_info)
 
         eval_loader1 = get_loader(p, 'eval_train', meta_info)  
         eval_loader2 = get_loader(p, 'eval_train', meta_info)  
@@ -242,21 +234,14 @@ def main():
         prob2, pl_2 = output2['prob'], output2['pl']
 
         q1 = mp.Queue()
-        q2 = mp.Queue()
-        p1 = mp.Process(target=scanmix_big_test, args=(epoch,net1,net2_clone,webvision_test_loader,device_1, q1))
-        p2 = mp.Process(target=scanmix_big_test, args=(epoch,net1_clone,net2,imagenet_test_loader,device_2, q2))
+        p1 = mp.Process(target=scanmix_big_test, args=(epoch,net1,net2_clone,test_loader,device_1, q1))
 
         p1.start()
-        p2.start()
-        acc_webvision = q1.get()
-        acc_imagenet = q2.get()
+        acc = q1.get()
         p1.join()
-        p2.join()
 
-        print('\nEpoch:%d   Accuracy (webvision):%.2f (%.2f)\n'%(epoch,acc_webvision[0],acc_webvision[1]))
-        print('Epoch:%d   Accuracy (imagenet):%.2f (%.2f)\n'%(epoch,acc_imagenet[0],acc_imagenet[1]))
-        test_log.write('Epoch:%d   Accuracy (webvision):%.2f (%.2f)\n'%(epoch,acc_webvision[0],acc_webvision[1]))
-        test_log.write('Epoch:%d   Accuracy (imagenet):%.2f (%.2f)\n'%(epoch,acc_imagenet[0],acc_imagenet[1]))
+        print('\nEpoch:%d   Accuracy (webvision):%.2f (%.2f)\n'%(epoch,acc[0],acc[1]))
+        test_log.write('Epoch:%d   Accuracy (webvision):%.2f (%.2f)\n'%(epoch,acc[0],acc[1]))
         test_log.flush() 
 
         if (epoch+1) % 5 == 0:

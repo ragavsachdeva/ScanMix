@@ -25,15 +25,7 @@ class Webvision(Dataset):
                 target = int(target)
                 if target<num_class:
                     self.val_imgs.append(img)
-                    self.val_labels[img]=target
-        #todo: use the labels.txt to get targets
-        elif self.mode=='imagenet_val':
-            root = self.root+'imagenet_val/'
-            self.val_imgs = []
-            for c in range(num_class):
-                imgs = os.listdir(root+str(c))
-                for img in imgs:
-                    self.val_imgs.append([c,os.path.join(root,str(c),img)])                             
+                    self.val_labels[img]=target                         
         else:    
             with open(self.root+'info/train_filelist_google.txt') as f:
                 lines=f.readlines()    
@@ -97,17 +89,9 @@ class Webvision(Dataset):
                 img = self.transform(img)
             out = {'image': img, 'target': target, 'meta': {'index': index}}
             return out
-        elif self.mode == 'imagenet_val':
-            data = self.val_imgs[index]
-            target = data[0]
-            img = Image.open(data[1]).convert('RGB')
-            if self.transform is not None:
-                img = self.transform(img)   
-            out = {'image': img, 'target': target, 'meta': {'index': index}}
-            return out
            
     def __len__(self):
-        if self.mode not in ['test', 'imagenet_val']:
+        if self.mode not in ['test']:
             return len(self.train_imgs)
         else:
             return len(self.val_imgs)    

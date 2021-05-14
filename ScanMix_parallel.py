@@ -242,8 +242,9 @@ def main():
         prob2, pl_2 = output2['prob'], output2['pl']
 
         q1 = mp.Queue()
+        q2 = mp.Queue()
         p1 = mp.Process(target=scanmix_big_test, args=(epoch,net1,net2_clone,webvision_test_loader,device_1, q1))
-        p2 = mp.Process(target=scanmix_big_test, args=(epoch,net1,net2_clone,imagenet_test_loader,device_2, q2))
+        p2 = mp.Process(target=scanmix_big_test, args=(epoch,net1_clone,net2,imagenet_test_loader,device_2, q2))
 
         p1.start()
         p2.start()
@@ -253,7 +254,7 @@ def main():
         p2.join()
 
         print('\nEpoch:%d   Accuracy (webvision):%.2f (%.2f)\n'%(epoch,acc_webvision[0],acc_webvision[1]))
-        print('\nEpoch:%d   Accuracy (imagenet):%.2f (%.2f)\n'%(epoch,acc_imagenet[0],acc_imagenet[1]))
+        print('Epoch:%d   Accuracy (imagenet):%.2f (%.2f)\n'%(epoch,acc_imagenet[0],acc_imagenet[1]))
         test_log.write('Epoch:%d   Accuracy (webvision):%.2f (%.2f)\n'%(epoch,acc_webvision[0],acc_webvision[1]))
         test_log.write('Epoch:%d   Accuracy (imagenet):%.2f (%.2f)\n'%(epoch,acc_imagenet[0],acc_imagenet[1]))
         test_log.flush() 

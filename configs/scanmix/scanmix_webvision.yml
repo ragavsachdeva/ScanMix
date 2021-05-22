@@ -46,7 +46,7 @@ scan_kwargs:
      random: True
 
 lr: 0.02
-lr_sl: 0.001
+lr_sl: 0.00001
 #optimisers
 optimizer: sgd
 optimizer_kwargs:

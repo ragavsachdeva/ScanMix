@@ -1,8 +1,8 @@
 # setup
 setup: scan
+data_path: ../data/cifar10/
 to_noisy_dataset: False # labels are not used
-dataset: cifar100
-data_path: ../data/cifar1/
+dataset: cifar10
 # Loss
 criterion: scan
 criterion_kwargs:
@@ -13,12 +13,12 @@ update_cluster_head_only: False # Update full network in SCAN
 num_heads: 1 # Only use one head
 
 # Model
-backbone: resnet18
+backbone: resnet34
 
 # Dataset
-train_db_name: cifar-100
-val_db_name: cifar-100
-num_classes: 100
+train_db_name: cifar-10-plc
+val_db_name: cifar-10-plc
+num_classes: 10
 num_neighbors: 20
 
 # Transformations
@@ -26,8 +26,8 @@ augmentation_strategy: ours
 augmentation_kwargs:
    crop_size: 32
    normalize:
-      mean: [0.5071, 0.4867, 0.4408]
-      std: [0.2675, 0.2565, 0.2761]
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2023, 0.1994, 0.2010]
    num_strong_augs: 4
    cutout_kwargs:
      n_holes: 1
@@ -37,17 +37,17 @@ augmentation_kwargs:
 transformation_kwargs:
    crop_size: 32
    normalize:
-      mean: [0.5071, 0.4867, 0.4408]
-      std: [0.2675, 0.2565, 0.2761]
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2023, 0.1994, 0.2010]
 
 # Hyperparameters
 optimizer: adam
 optimizer_kwargs:
    lr: 0.0001
    weight_decay: 0.0001
-epochs: 100
-batch_size: 1024
-num_workers: 12
+epochs: 50
+batch_size: 128
+num_workers: 8
 
 # Scheduler
 scheduler: constant

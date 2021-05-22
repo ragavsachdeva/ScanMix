@@ -1,17 +1,17 @@
 # Setup
 setup: simclr
-dataset: cifar10
 data_path: ../data/cifar10/
+dataset: cifar10
 
 # Model
-backbone: resnet18
+backbone: resnet34
 model_kwargs:
    head: mlp
    features_dim: 128
 
 # Dataset
-train_db_name: cifar-10
-val_db_name: cifar-10
+train_db_name: cifar-10-plc
+val_db_name: cifar-10-plc
 num_classes: 10
 
 # Loss
@@ -32,7 +32,7 @@ scheduler_kwargs:
    lr_decay_rate: 0.1
 batch_size: 512 
 num_workers: 8
-to_noisy_dataset: False # labels are not used
+to_noisy_dataset: False  # labels are not used
 
 # Transformations
 augmentation_strategy: simclr 

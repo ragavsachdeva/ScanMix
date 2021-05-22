@@ -1,7 +1,7 @@
 # setup
 setup: scan
-to_noisy_dataset: True
-noise_dir: ./noise/cifar10
+data_path: ../data/cifar10/
+to_noisy_dataset: False # labels are not used
 dataset: cifar10
 # Loss
 criterion: scan

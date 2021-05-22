@@ -2,7 +2,7 @@
 setup: scan
 to_noisy_dataset: False # labels are not used
 dataset: cifar100
-data_path: ../data/cifar1/
+data_path: ../data/cifar100/
 # Loss
 criterion: scan
 criterion_kwargs:
@@ -13,11 +13,11 @@ update_cluster_head_only: False # Update full network in SCAN
 num_heads: 1 # Only use one head
 
 # Model
-backbone: resnet18
+backbone: resnet34
 
 # Dataset
-train_db_name: cifar-100
-val_db_name: cifar-100
+train_db_name: cifar-100-plc
+val_db_name: cifar-100-plc
 num_classes: 100
 num_neighbors: 20
 

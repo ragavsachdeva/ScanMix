@@ -24,7 +24,6 @@ def simclr_train(train_loader, model, criterion, optimizer, epoch):
         input_ = torch.cat([images.unsqueeze(1), images_augmented.unsqueeze(1)], dim=1)
         input_ = input_.view(-1, c, h, w) 
         input_ = input_.cuda(non_blocking=True)
-        targets = batch['target'].cuda(non_blocking=True)
 
         output = model(input_).view(b, 2, -1)
         loss = criterion(output)
@@ -308,7 +307,7 @@ def scanmix_warmup(epoch,net,optimizer,dataloader,criterion, conf_penalty, noise
         [losses],
         prefix="Epoch: [{}]".format(epoch))
     num_iter = (len(dataloader.dataset)//dataloader.batch_size)+1
-    for batch_idx, (inputs, labels, path) in enumerate(dataloader):      
+    for batch_idx, (inputs, labels, path) in enumerate(dataloader):    
         inputs, labels = inputs.to(device), labels.to(device) 
         optimizer.zero_grad()
         with torch.no_grad():
@@ -319,6 +318,8 @@ def scanmix_warmup(epoch,net,optimizer,dataloader,criterion, conf_penalty, noise
             penalty = conf_penalty(outputs)
             L = loss + penalty      
         elif noise_mode=='sym':   
+            L = loss
+        elif noise_mode in ['1','2','3']:
             L = loss
         L.backward()  
         optimizer.step() 
@@ -352,8 +353,8 @@ def scanmix_big_warmup(p,epoch,net,optimizer,dataloader,criterion, conf_penalty,
 
 def scanmix_eval_train(args,model,all_loss,epoch,eval_loader,criterion,device):    
     model.eval()
-    losses = torch.zeros(50000)
-    pl = torch.zeros(50000)    
+    losses = torch.zeros(len(eval_loader.dataset))
+    pl = torch.zeros(len(eval_loader.dataset))    
     with torch.no_grad():
         for batch_idx, (inputs, targets, index) in enumerate(eval_loader):
             inputs, targets = inputs.to(device), targets.to(device) 
@@ -450,8 +451,7 @@ def scanmix_scan(train_loader, model, criterion, optimizer, epoch, device, updat
             neighbors_output = model(neighbors, forward_pass='sl')     
 
         # Loss for every head
-        total_loss, consistency_loss, entropy_loss = criterion(anchors_output,
-                                                                         neighbors_output)
+        total_loss, consistency_loss, entropy_loss = criterion(anchors_output, neighbors_output)
         # Register the mean loss and backprop the total loss to cover all subheads
         total_losses.update(total_loss.item())
         consistency_losses.update(consistency_loss.item())

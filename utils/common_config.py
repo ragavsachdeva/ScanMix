@@ -83,6 +83,11 @@ def get_model(p, pretrain_path=None):
         else:
             raise NotImplementedError 
 
+    elif p['backbone'] == 'resnet34':
+        if p['train_db_name'] in ['cifar-10-plc', 'cifar-100-plc']:
+            from models.resnet import resnet34
+            backbone = resnet34()  
+
     else:
         raise ValueError('Invalid backbone {}'.format(p['backbone']))
 
@@ -161,7 +166,7 @@ def get_train_dataset(p, transform, to_augmented_dataset=False,
     # Base dataset
     if p['train_db_name'] == 'cifar-10':
         from data.cifar import CIFAR10
-        dataset = CIFAR10(train=True, transform=transform, download=True)
+        dataset = CIFAR10(root=p['data_path'], train=True, transform=transform, download=True)
 
     elif p['train_db_name'] == 'cifar-20':
         from data.cifar import CIFAR20
@@ -169,7 +174,7 @@ def get_train_dataset(p, transform, to_augmented_dataset=False,
     
     elif p['train_db_name'] == 'cifar-100':
         from data.cifar import CIFAR100
-        dataset = CIFAR100(train=True, transform=transform, download=True)
+        dataset = CIFAR100(root=p['data_path'], train=True, transform=transform, download=True)
 
     elif p['train_db_name'] == 'stl-10':
         from data.stl import STL10
@@ -187,6 +192,14 @@ def get_train_dataset(p, transform, to_augmented_dataset=False,
     elif p['train_db_name'] == 'webvision':
         from data.webvision import Webvision
         dataset = Webvision(root_dir=p['data_path'], transform=transform, meta_info=meta_info, num_classes=p['num_classes'])
+
+    elif p['train_db_name'] == 'cifar-10-plc':
+        from data.cifar_plc import CIFAR10
+        dataset = CIFAR10(root=p['data_path'], split='train', train_ratio=0.9, trust_ratio=0, download=True, transform=transform)
+
+    elif p['train_db_name'] == 'cifar-100-plc':
+        from data.cifar_plc import CIFAR100
+        dataset = CIFAR100(root=p['data_path'], split='train', train_ratio=0.9, trust_ratio=0, download=True, transform=transform)
 
     else:
         raise ValueError('Invalid train dataset {}'.format(p['train_db_name']))
@@ -212,7 +225,7 @@ def get_val_dataset(p, transform=None, to_neighbors_dataset=False, meta_info=Non
     # Base dataset
     if p['val_db_name'] == 'cifar-10':
         from data.cifar import CIFAR10
-        dataset = CIFAR10(train=False, transform=transform, download=True)
+        dataset = CIFAR10(root=p['data_path'], train=False, transform=transform, download=True)
     
     elif p['val_db_name'] == 'cifar-20':
         from data.cifar import CIFAR20
@@ -220,7 +233,7 @@ def get_val_dataset(p, transform=None, to_neighbors_dataset=False, meta_info=Non
 
     elif p['val_db_name'] == 'cifar-100':
         from data.cifar import CIFAR100
-        dataset = CIFAR100(train=False, transform=transform, download=True)
+        dataset = CIFAR100(root=p['data_path'], train=False, transform=transform, download=True)
 
     elif p['val_db_name'] == 'stl-10':
         from data.stl import STL10
@@ -238,6 +251,14 @@ def get_val_dataset(p, transform=None, to_neighbors_dataset=False, meta_info=Non
     elif p['val_db_name'] == 'webvision':
         from data.webvision import Webvision
         dataset = Webvision(root_dir=p['data_path'], transform=transform, meta_info=meta_info, num_classes=p['num_classes'])
+
+    elif p['val_db_name'] == 'cifar-10-plc':
+        from data.cifar_plc import CIFAR10
+        dataset = CIFAR10(root=p['data_path'], split='test', train_ratio=0.9, trust_ratio=0, download=True, transform=transform)
+
+    elif p['val_db_name'] == 'cifar-100-plc':
+        from data.cifar_plc import CIFAR100
+        dataset = CIFAR100(root=p['data_path'], split='test', train_ratio=0.9, trust_ratio=0, download=True, transform=transform)
 
     else:
         raise ValueError('Invalid validation dataset {}'.format(p['val_db_name']))

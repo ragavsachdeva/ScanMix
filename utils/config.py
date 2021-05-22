@@ -23,7 +23,6 @@ def create_config(config_file_env, config_file_exp, meta_info=None):
     noise_specific = ''
     if cfg['to_noisy_dataset']:
         noise_specific = 'r={}_{}'.format(meta_info['r'], meta_info['noise_mode'])
-    pretext_dir = os.path.join(pretext_dir, noise_specific)
     mkdir_if_missing(base_dir)
     mkdir_if_missing(pretext_dir)
     cfg['pretext_dir'] = pretext_dir
@@ -41,7 +40,6 @@ def create_config(config_file_env, config_file_exp, meta_info=None):
     if cfg['setup'] in ['scan', 'selflabel', 'dividemix', 'scanmix']:
         base_dir = os.path.join(root_dir, cfg['train_db_name'])
         scan_dir = os.path.join(base_dir, 'scan')
-        scan_dir = os.path.join(scan_dir, noise_specific)
         selflabel_dir = os.path.join(base_dir, 'selflabel') 
         dividemix_dir = os.path.join(base_dir, 'dividemix')
         scanmix_dir = os.path.join(base_dir, 'scanmix')

@@ -1,7 +1,7 @@
 # Setup
 setup: simclr
-noise_dir: ./noise/cifar100
 dataset: cifar100
+data_path: ../data/cifar100/
 
 # Model
 backbone: resnet18
@@ -32,7 +32,7 @@ scheduler_kwargs:
    lr_decay_rate: 0.1
 batch_size: 512 
 num_workers: 8
-to_noisy_dataset: True
+to_noisy_dataset: False # labels are not used
 
 # Transformations
 augmentation_strategy: simclr 

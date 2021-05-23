@@ -193,13 +193,13 @@ def main():
             meta_info['probability'] = prob2
             meta_info['pred'] = pred2
             labeled_trainloader, unlabeled_trainloader = get_loader(p, 'train', meta_info)
-            # scanmix_train(p, epoch,net1,net2,optimizer1,labeled_trainloader, unlabeled_trainloader, criterion_dm, args.lambda_u, device=device) # train net1  
+            scanmix_train(p, epoch,net1,net2,optimizer1,labeled_trainloader, unlabeled_trainloader, criterion_dm, args.lambda_u, device=device) # train net1  
             
             print('\n[DM] Train Net2')
             meta_info['probability'] = prob1
             meta_info['pred'] = pred1
             labeled_trainloader, unlabeled_trainloader = get_loader(p, 'train', meta_info)
-            # scanmix_train(p, epoch,net2,net1,optimizer2,labeled_trainloader, unlabeled_trainloader, criterion_dm, args.lambda_u, device=device) # train net2       
+            scanmix_train(p, epoch,net2,net1,optimizer2,labeled_trainloader, unlabeled_trainloader, criterion_dm, args.lambda_u, device=device) # train net2       
             
             if not args.dividemix_only:
                 for param_group in optimizer1.param_groups:

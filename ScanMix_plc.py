@@ -31,7 +31,7 @@ parser.add_argument('--inference', default=None, type=str)
 parser.add_argument('--load_state_dict', default=None, type=str)
 parser.add_argument('--cudaid', default=0)
 parser.add_argument('--dividemix_only', action='store_true')
-parser.add_argument('--lr_sl', type=float, default=None)
+parser.add_argument('--lr_sl', type=float, default=0.001)
 
 parser.add_argument('--config_env',
                     help='Config file for the environment')
@@ -166,22 +166,6 @@ def main():
             print('\nWarmup Net2')
             scanmix_warmup(epoch,net2,optimizer2,warmup_trainloader, CEloss, conf_penalty, args.noise_mode, device=device)
 
-            if epoch == p['warmup']-1:
-                prob1,_,_=scanmix_eval_train(args,net1,[], epoch, eval_loader, CE, device=device)   
-                prob2,_,_=scanmix_eval_train(args,net2,[], epoch, eval_loader, CE, device=device)
-                pred1 = (prob1 > p['p_threshold'])      
-                pred2 = (prob2 > p['p_threshold'])
-                noise1 = len((1-pred1).nonzero()[0])/len(pred1)
-                noise2 = len((1-pred2).nonzero()[0])/len(pred2)
-                predicted_noise = (noise1 + noise2) / 2
-                print('\nPREDICTED NOISE RATE: {}'.format(predicted_noise))
-                if predicted_noise <= 0.6:
-                    args.lr_sl = 0.00001
-                    p['augmentation_strategy'] = 'dividemix'
-                else:
-                    args.lr_sl = 0.001
-                    p['augmentation_strategy'] = 'ours'
-    
         else:         
             prob1,all_loss[0],pl_1=scanmix_eval_train(args,net1,all_loss[0], epoch, eval_loader, CE, device=device)   
             prob2,all_loss[1],pl_2=scanmix_eval_train(args,net2,all_loss[1], epoch, eval_loader, CE, device=device)          

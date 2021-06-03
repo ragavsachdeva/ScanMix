@@ -35,8 +35,6 @@ def create_config(config_file_env, config_file_exp, meta_info=None):
     #     cfg['topk_neighbors_train_path'] = os.path.join(base_dir, 'scanmix/topk-train-neighbors.npy')
     #     cfg['topk_neighbors_val_path'] = None
 
-    # If we perform clustering or self-labeling step we need additional paths.
-    # We also include a run identifier to support multiple runs w/ same hyperparams.
     if cfg['setup'] in ['scan', 'selflabel', 'dividemix', 'scanmix']:
         base_dir = os.path.join(root_dir, cfg['train_db_name'])
         scan_dir = os.path.join(base_dir, 'scan')

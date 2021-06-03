@@ -31,7 +31,6 @@ parser.add_argument('--seed', default=123)
 parser.add_argument('--load_state_dict', default=None, type=str)
 parser.add_argument('--cudaids', nargs=2, type=int)
 parser.add_argument('--lr_sl', type=float, required=True)
-# parser.add_argument('--lr_sl', type=float, default=None)
 
 parser.add_argument('--config_env',
                     help='Config file for the environment')
@@ -58,11 +57,6 @@ meta_info['probability'] = None
 meta_info['pred'] = None
 meta_info['noise_rate'] = args.r
 
-# checkpoint_dir = 'results/{}/scanmix/'.format(p['train_db_name'])
-
-# Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-# Path(os.path.join(checkpoint_dir, 'savedDicts')).mkdir(parents=True, exist_ok=True)
-
 Path(os.path.join(p['scanmix_dir'], 'savedDicts')).mkdir(parents=True, exist_ok=True)
 checkpoint_dir = p['scanmix_dir']
 
@@ -76,19 +70,9 @@ def create_model(device):
     model = model.to(device)
     return model
 
-# test_log_path = os.path.join(checkpoint_dir, 'acc_{}.txt'.format(args.lr_sl))
 test_log = open(os.path.join(checkpoint_dir, 'acc_{}.txt'.format(args.lr_sl)), 'w')
 stats_log = open(os.path.join(checkpoint_dir, 'stats_{}.txt'.format(args.lr_sl)), 'w') 
-
-
-# test_log = open(os.path.join(p['scanmix_dir'], 'acc.txt'), 'w')
-# with open(test_log_path, 'w') as test_log:
 test_log.write('start\n')
-
-
-
-
-# stats_log = open(os.path.join(p['scanmix_dir'], 'stats.txt'), 'w')
 
 def get_loader(p, mode, meta_info):
     if mode == 'test':
@@ -169,7 +153,6 @@ def main():
         acc = scanmix_test(start_epoch-1,net1,net2,test_loader, device=device)
         print('\nEpoch:%d   Accuracy:%.2f\n'%(start_epoch-1,acc))
         
-        # with open(test_log_path, 'a') as test_log:
         test_log.write('Epoch:%d   Accuracy:%.2f\n'%(start_epoch-1,acc))
         test_log.flush()
     else:
@@ -180,8 +163,6 @@ def main():
 
     for epoch in range(start_epoch, p['num_epochs']+1):   
         lr=p['lr']
-        # if epoch >= (p['num_epochs']/2):
-        #     lr /= 10   
         if epoch >= 200:
             lr /= 10      
             if epoch >=250:
@@ -270,21 +251,6 @@ def main():
 
         prob1, pl_1 = output1['prob'], output1['pl']
         prob2, pl_2 = output2['prob'], output2['pl']
-
-        # if epoch == p['warmup']-1:
-        #     pred1 = (prob1 > p['p_threshold'])      
-        #     pred2 = (prob2 > p['p_threshold'])
-        #     noise1 = len((1-pred1).nonzero()[0])/len(pred1)
-        #     noise2 = len((1-pred2).nonzero()[0])/len(pred2)
-        #     predicted_noise = (noise1 + noise2) / 2
-        #     print('\nPREDICTED NOISE RATE: {}'.format(predicted_noise))
-            # if predicted_noise <= 0.6:
-            #     args.lr_sl = 0.00001
-            #     p['augmentation_strategy'] = 'dividemix'
-            # else:
-            #     args.lr_sl = 0.001
-            #     p['augmentation_strategy'] = 'ours'
-
         
         q1 = mp.Queue()
         p1 = mp.Process(target=scanmix_big_test, args=(epoch,net1,net2_clone,test_loader,device_1, q1))

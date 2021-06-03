@@ -330,7 +330,7 @@ def get_val_transformations(p):
     if 'resize' in p['augmentation_kwargs'].keys():
         trnfs = [transforms.Resize(p['augmentation_kwargs']['resize'])]
     if p['augmentation_strategy'] != 'dividemix_red_mini_imagenet':
-    trnfs.append(transforms.CenterCrop(p['augmentation_kwargs']['crop_size']))
+        trnfs.append(transforms.CenterCrop(p['augmentation_kwargs']['crop_size']))
     trnfs.append(transforms.ToTensor())
     trnfs.append(transforms.Normalize(**p['augmentation_kwargs']['normalize']))
     return transforms.Compose(trnfs)

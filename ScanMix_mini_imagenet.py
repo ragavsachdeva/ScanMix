@@ -18,20 +18,20 @@ from utils.common_config import get_train_transformations, get_val_transformatio
                                 get_train_dataset, get_train_dataloader,\
                                 get_val_dataset, get_val_dataloader,\
                                 get_model, get_criterion
-from utils.evaluate_utils import scanmix_test
-from utils.train_utils import scanmix_train, scanmix_eval_train, scanmix_warmup, scanmix_scan
+from utils.evaluate_utils import scanmix_big_test, scanmix_test
+from utils.train_utils import scanmix_big_train, scanmix_big_eval_train, scanmix_big_warmup, scanmix_scan
+import torch.multiprocessing as mp
+import time
 
 parser = argparse.ArgumentParser(description='DivideMix')
 parser.add_argument('--noise_mode',  default='sym')
-parser.add_argument('--lambda_u', default=25, type=float, help='weight for unsupervised loss')
+parser.add_argument('--lambda_u', default=0, type=float, help='weight for unsupervised loss')
 parser.add_argument('--r', default=0, type=float, help='noise ratio')
 parser.add_argument('--seed', default=123)
-parser.add_argument('--gpuid', default=0, type=int)
-parser.add_argument('--inference', default=None, type=str)
 parser.add_argument('--load_state_dict', default=None, type=str)
-parser.add_argument('--cudaid', default=0)
-parser.add_argument('--dividemix_only', action='store_true')
-parser.add_argument('--lr_sl', type=float, default=None)
+parser.add_argument('--cudaids', nargs=2, type=int)
+parser.add_argument('--lr_sl', type=float, required=True)
+# parser.add_argument('--lr_sl', type=float, default=None)
 
 parser.add_argument('--config_env',
                     help='Config file for the environment')
@@ -39,7 +39,12 @@ parser.add_argument('--config_exp',
                     help='Config file for the experiment')
 args = parser.parse_args()
 
-device = device = torch.device('cuda:{}'.format(args.cudaid))
+
+
+os.environ["CUDA_VISIBLE_DEVICES"] = '%s,%s'%(args.cudaids[0],args.cudaids[1])
+
+device_1 = torch.device('cuda:{}'.format(0))
+device_2 = torch.device('cuda:{}'.format(1))
 
 random.seed(args.seed)
 torch.manual_seed(args.seed)
@@ -49,30 +54,41 @@ torch.cuda.manual_seed_all(args.seed)
 meta_info = copy.deepcopy(args.__dict__)
 p = create_config(args.config_env, args.config_exp, meta_info)
 meta_info['dataset'] = p['dataset']
-meta_info['noise_file'] = '{}/{:.2f}'.format(p['noise_dir'], args.r)
-if args.noise_mode == 'asym':
-    meta_info['noise_file'] += '_asym'
-elif 'semantic' in args.noise_mode:
-    meta_info['noise_file'] += '_{}'.format(args.noise_mode)
-meta_info['noise_file'] += '.json'
 meta_info['probability'] = None
 meta_info['pred'] = None
 meta_info['noise_rate'] = args.r
 
+# checkpoint_dir = 'results/{}/scanmix/'.format(p['train_db_name'])
+
+# Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
+# Path(os.path.join(checkpoint_dir, 'savedDicts')).mkdir(parents=True, exist_ok=True)
+
 Path(os.path.join(p['scanmix_dir'], 'savedDicts')).mkdir(parents=True, exist_ok=True)
+checkpoint_dir = p['scanmix_dir']
 
 class NegEntropy(object):
     def __call__(self,outputs):
         probs = torch.softmax(outputs, dim=1)
         return torch.mean(torch.sum(probs.log()*probs, dim=1))
 
-def create_model():
+def create_model(device):
     model = get_model(p, p['scan_model'])
     model = model.to(device)
     return model
 
-test_log = open(os.path.join(p['scanmix_dir'], 'acc.txt'), 'w')
-stats_log = open(os.path.join(p['scanmix_dir'], 'stats.txt'), 'w')
+# test_log_path = os.path.join(checkpoint_dir, 'acc_{}.txt'.format(args.lr_sl))
+test_log = open(os.path.join(checkpoint_dir, 'acc_{}.txt'.format(args.lr_sl)), 'w')
+stats_log = open(os.path.join(checkpoint_dir, 'stats_{}.txt'.format(args.lr_sl)), 'w') 
+
+
+# test_log = open(os.path.join(p['scanmix_dir'], 'acc.txt'), 'w')
+# with open(test_log_path, 'w') as test_log:
+test_log.write('start\n')
+
+
+
+
+# stats_log = open(os.path.join(p['scanmix_dir'], 'stats.txt'), 'w')
 
 def get_loader(p, mode, meta_info):
     if mode == 'test':
@@ -112,7 +128,7 @@ def get_loader(p, mode, meta_info):
 
     elif mode == 'neighbors':
         meta_info['mode'] = 'neighbor'
-        train_transformations = get_train_transformations(p)
+        train_transformations = get_scan_transformations(p)
         neighbor_dataset = get_train_dataset(p, train_transformations, 
                                         split='train', to_neighbors_dataset=True, to_noisy_dataset=p['to_noisy_dataset'], meta_info=meta_info)
         neighbor_dataloader = get_train_dataloader(p, neighbor_dataset, explicit_batch_size=p['batch_size_scan'])
@@ -127,9 +143,14 @@ criterion_dm, criterion_sl = get_criterion(p)
 conf_penalty = NegEntropy()
 
 def main():
+    
     print('| Building net')
-    net1 = create_model()
-    net2 = create_model()
+    net1 = create_model(device_1)
+    net2 = create_model(device_2)
+
+    net1_clone = create_model(device_2)
+    net2_clone = create_model(device_1)
+
     cudnn.benchmark = True
 
     optimizer1 = optim.SGD(net1.parameters(), lr=p['lr'], momentum=0.9, weight_decay=5e-4)
@@ -147,91 +168,152 @@ def main():
         test_loader = get_loader(p, 'test', meta_info)
         acc = scanmix_test(start_epoch-1,net1,net2,test_loader, device=device)
         print('\nEpoch:%d   Accuracy:%.2f\n'%(start_epoch-1,acc))
+        
+        # with open(test_log_path, 'a') as test_log:
         test_log.write('Epoch:%d   Accuracy:%.2f\n'%(start_epoch-1,acc))
         test_log.flush()
     else:
         start_epoch = 0
 
     all_loss = [[],[]] # save the history of losses from two networks
+    acc_hist=[]
 
     for epoch in range(start_epoch, p['num_epochs']+1):   
         lr=p['lr']
-        if epoch >= 150:
+        # if epoch >= (p['num_epochs']/2):
+        #     lr /= 10   
+        if epoch >= 200:
             lr /= 10      
+            if epoch >=250:
+                lr /= 10  
         for param_group in optimizer1.param_groups:
             param_group['lr'] = lr       
         for param_group in optimizer2.param_groups:
             param_group['lr'] = lr        
-        test_loader = get_loader(p, 'test', meta_info)
-        eval_loader = get_loader(p, 'eval_train', meta_info)  
         
         if epoch<p['warmup']:       
-            warmup_trainloader = get_loader(p, 'warmup', meta_info)
-            print('Warmup Net1')
-            scanmix_warmup(epoch,net1,optimizer1,warmup_trainloader, CEloss, conf_penalty, args.noise_mode, device=device)    
-            print('\nWarmup Net2')
-            scanmix_warmup(epoch,net2,optimizer2,warmup_trainloader, CEloss, conf_penalty, args.noise_mode, device=device)
-
-            if epoch == p['warmup']-1:
-                prob1,_,_=scanmix_eval_train(args,net1,[], epoch, eval_loader, CE, device=device)   
-                prob2,_,_=scanmix_eval_train(args,net2,[], epoch, eval_loader, CE, device=device)
-                pred1 = (prob1 > p['p_threshold'])      
-                pred2 = (prob2 > p['p_threshold'])
-                noise1 = len((1-pred1).nonzero()[0])/len(pred1)
-                noise2 = len((1-pred2).nonzero()[0])/len(pred2)
-                predicted_noise = (noise1 + noise2) / 2
-                print('\nPREDICTED NOISE RATE: {}'.format(predicted_noise))
-                if predicted_noise <= 0.6:
-                    args.lr_sl = 0.00001
-                    p['augmentation_strategy'] = 'dividemix'
-                else:
-                    args.lr_sl = 0.001
-                    p['augmentation_strategy'] = 'ours'
+            warmup_trainloader1 = get_loader(p, 'warmup', meta_info)
+            warmup_trainloader2 = get_loader(p, 'warmup', meta_info)
+            p1 = mp.Process(target=scanmix_big_warmup, args=(p,epoch,net1,optimizer1,warmup_trainloader1, CEloss, conf_penalty, args.noise_mode, device_1))    
+            p2 = mp.Process(target=scanmix_big_warmup, args=(p,epoch,net2,optimizer2,warmup_trainloader2, CEloss, conf_penalty, args.noise_mode, device_2))
+            p1.start()
+            p2.start() 
     
-        else:         
-            prob1,all_loss[0],pl_1=scanmix_eval_train(args,net1,all_loss[0], epoch, eval_loader, CE, device=device)   
-            prob2,all_loss[1],pl_2=scanmix_eval_train(args,net2,all_loss[1], epoch, eval_loader, CE, device=device)          
+        else:                  
                 
             pred1 = (prob1 > p['p_threshold'])      
             pred2 = (prob2 > p['p_threshold'])      
 
-            print('[DM] Train Net1')
+            print('[DM] Train')
             meta_info['probability'] = prob2
             meta_info['pred'] = pred2
-            labeled_trainloader, unlabeled_trainloader = get_loader(p, 'train', meta_info)
-            scanmix_train(p, epoch,net1,net2,optimizer1,labeled_trainloader, unlabeled_trainloader, criterion_dm, args.lambda_u, device=device) # train net1  
-            
-            print('\n[DM] Train Net2')
+            labeled_trainloader1, unlabeled_trainloader1 = get_loader(p, 'train', meta_info)
             meta_info['probability'] = prob1
             meta_info['pred'] = pred1
-            labeled_trainloader, unlabeled_trainloader = get_loader(p, 'train', meta_info)
-            scanmix_train(p, epoch,net2,net1,optimizer2,labeled_trainloader, unlabeled_trainloader, criterion_dm, args.lambda_u, device=device) # train net2       
+            labeled_trainloader2, unlabeled_trainloader2 = get_loader(p, 'train', meta_info)
             
-            if not args.dividemix_only:
-                for param_group in optimizer1.param_groups:
-                    param_group['lr'] = args.lr_sl    
-                for param_group in optimizer2.param_groups:
-                    param_group['lr'] = args.lr_sl  
-                meta_info['predicted_labels'] = pl_2   
-                neighbor_dataloader = get_loader(p, 'neighbors', meta_info)
-                print('\n[SL] Train Net1')
-                scanmix_scan(neighbor_dataloader, net1, criterion_sl, optimizer1, epoch, device)
-                meta_info['predicted_labels'] = pl_1  
-                neighbor_dataloader = get_loader(p, 'neighbors', meta_info)
-                print('\n[SL] Train Net2')
-                scanmix_scan(neighbor_dataloader, net2, criterion_sl, optimizer2, epoch, device)
+            p1 = mp.Process(target=scanmix_big_train, args=(p, epoch,net1,net2_clone,optimizer1,labeled_trainloader1, unlabeled_trainloader1, criterion_dm, args.lambda_u, device_1)) 
+            p2 = mp.Process(target=scanmix_big_train, args=(p, epoch,net2,net1_clone,optimizer2,labeled_trainloader2, unlabeled_trainloader2, criterion_dm, args.lambda_u, device_2))
+            p1.start()
+            p2.start()
 
-        acc = scanmix_test(epoch,net1,net2,test_loader, device=device)
+            p1.join()
+            p2.join()
+
+            for param_group in optimizer1.param_groups:
+                param_group['lr'] = args.lr_sl    
+            for param_group in optimizer2.param_groups:
+                param_group['lr'] = args.lr_sl  
+
+            print('\n[SL] Train')
+            meta_info['predicted_labels'] = pl_2   
+            neighbor_dataloader1 = get_loader(p, 'neighbors', meta_info)
+            meta_info['predicted_labels'] = pl_1  
+            neighbor_dataloader2 = get_loader(p, 'neighbors', meta_info)
+            p1 = mp.Process(target=scanmix_scan,args=(neighbor_dataloader1, net1, criterion_sl, optimizer1, epoch, device_1))
+            p2 = mp.Process(target=scanmix_scan,args=(neighbor_dataloader2, net2, criterion_sl, optimizer2, epoch, device_2))
+
+            p1.start()
+            p2.start()
+
+        p1.join()
+        p2.join()
+
+        
+        
+
+        net1_clone.load_state_dict(net1.state_dict())
+        net2_clone.load_state_dict(net2.state_dict())
+
+        test_loader = get_loader(p, 'test', meta_info)
+
+        
+                
+        
+        
+
+        eval_loader1 = get_loader(p, 'eval_train', meta_info)  
+        eval_loader2 = get_loader(p, 'eval_train', meta_info)  
+        
+        manager = mp.Manager()
+        output1 = manager.dict()
+        output2 = manager.dict()
+
+        p1 = mp.Process(target=scanmix_big_eval_train, args=(p,args,net1,epoch, eval_loader1, CE, device_1, output1))
+        p2 = mp.Process(target=scanmix_big_eval_train, args=(p,args,net2,epoch, eval_loader2, CE, device_2, output2))
+
+        p1.start()
+        p2.start()
+
+        p1.join()
+        p2.join()
+
+        prob1, pl_1 = output1['prob'], output1['pl']
+        prob2, pl_2 = output2['prob'], output2['pl']
+
+        # if epoch == p['warmup']-1:
+        #     pred1 = (prob1 > p['p_threshold'])      
+        #     pred2 = (prob2 > p['p_threshold'])
+        #     noise1 = len((1-pred1).nonzero()[0])/len(pred1)
+        #     noise2 = len((1-pred2).nonzero()[0])/len(pred2)
+        #     predicted_noise = (noise1 + noise2) / 2
+        #     print('\nPREDICTED NOISE RATE: {}'.format(predicted_noise))
+            # if predicted_noise <= 0.6:
+            #     args.lr_sl = 0.00001
+            #     p['augmentation_strategy'] = 'dividemix'
+            # else:
+            #     args.lr_sl = 0.001
+            #     p['augmentation_strategy'] = 'ours'
+
+        
+        q1 = mp.Queue()
+        p1 = mp.Process(target=scanmix_big_test, args=(epoch,net1,net2_clone,test_loader,device_1, q1))
+
+        p1.start()
+        acc = q1.get()
+        p1.join()
+
         print('\nEpoch:%d   Accuracy:%.2f\n'%(epoch,acc))
+        
+        acc_hist.append(acc)
         test_log.write('Epoch:%d   Accuracy:%.2f\n'%(epoch,acc))
         test_log.flush() 
-        torch.save({
-                    'net1_state_dict': net1.state_dict(),
-                    'net2_state_dict': net2.state_dict(),
-                    'epoch': epoch,
-                    'optimizer1': optimizer1.state_dict(),
-                    'optimizer2': optimizer2.state_dict(),
-                    }, os.path.join(p['scanmix_dir'], 'savedDicts/checkpoint.json'))
+        
+
+        if (epoch+1) % 5 == 0:
+            torch.save({
+                        'net1_state_dict': net1.state_dict(),
+                        'net2_state_dict': net2.state_dict(),
+                        'epoch': epoch,
+                        'optimizer1': optimizer1.state_dict(),
+                        'optimizer2': optimizer2.state_dict(),
+                        }, os.path.join(checkpoint_dir, 'savedDicts/checkpoint.json'))
+
+    hist_log = open(os.path.join(p['scanmix_dir'], 'acc_hist.txt'), 'w')
+    for ep in range(len(acc_hist)):
+        hist_log.write('Epoch:%d   Accuracy:%.2f\n'%(ep,acc_hist[ep]))
+
 
 if __name__ == "__main__":
+    mp.set_start_method('spawn')
     main()

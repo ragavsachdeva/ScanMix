@@ -50,7 +50,7 @@ def get_feature_dimensions_backbone(p):
 def get_model(p, pretrain_path=None):
     # Get backbone
     if p['backbone'] == 'resnet18':
-        if p['train_db_name'] in ['cifar-10', 'cifar-20', 'cifar-100']:
+        if p['train_db_name'] in ['cifar-10', 'cifar-20', 'cifar-100', 'mini_imagenet_red', 'mini_imagenet32_red']:
             from models.resnet_cifar import resnet18
             backbone = resnet18()
 
@@ -82,11 +82,6 @@ def get_model(p, pretrain_path=None):
 
         else:
             raise NotImplementedError 
-
-    elif p['backbone'] == 'resnet34':
-        if p['train_db_name'] in ['cifar-10-plc', 'cifar-100-plc']:
-            from models.resnet import resnet34
-            backbone = resnet34()  
 
     else:
         raise ValueError('Invalid backbone {}'.format(p['backbone']))
@@ -192,15 +187,9 @@ def get_train_dataset(p, transform, to_augmented_dataset=False,
     elif p['train_db_name'] == 'webvision':
         from data.webvision import Webvision
         dataset = Webvision(root_dir=p['data_path'], transform=transform, meta_info=meta_info, num_classes=p['num_classes'])
-
-    elif p['train_db_name'] == 'cifar-10-plc':
-        from data.cifar_plc import CIFAR10
-        dataset = CIFAR10(root=p['data_path'], split='train', train_ratio=0.9, trust_ratio=0, download=True, transform=transform)
-
-    elif p['train_db_name'] == 'cifar-100-plc':
-        from data.cifar_plc import CIFAR100
-        dataset = CIFAR100(root=p['data_path'], split='train', train_ratio=0.9, trust_ratio=0, download=True, transform=transform)
-
+    elif p['train_db_name'] in  ['mini_imagenet_red', 'mini_imagenet32_red']:
+        from data.redblue import MiniImagenet
+        dataset = MiniImagenet(root_dir=p['data_path'], transform=transform, meta_info=meta_info, num_classes=p['num_classes'], color='red')
     else:
         raise ValueError('Invalid train dataset {}'.format(p['train_db_name']))
     
@@ -239,26 +228,14 @@ def get_val_dataset(p, transform=None, to_neighbors_dataset=False, meta_info=Non
         from data.stl import STL10
         dataset = STL10(split='test', transform=transform, download=True)
     
-    elif p['val_db_name'] == 'imagenet':
-        from data.imagenet import ImageNet
-        dataset = ImageNet(split='val', transform=transform)
     
-    elif p['val_db_name'] in ['imagenet_50', 'imagenet_100', 'imagenet_200']:
-        from data.imagenet import ImageNetSubset
-        subset_file = './data/imagenet_subsets/%s.txt' %(p['val_db_name'])
-        dataset = ImageNetSubset(subset_file=subset_file, split='val', transform=transform)
 
     elif p['val_db_name'] == 'webvision':
         from data.webvision import Webvision
         dataset = Webvision(root_dir=p['data_path'], transform=transform, meta_info=meta_info, num_classes=p['num_classes'])
-
-    elif p['val_db_name'] == 'cifar-10-plc':
-        from data.cifar_plc import CIFAR10
-        dataset = CIFAR10(root=p['data_path'], split='test', train_ratio=0.9, trust_ratio=0, download=True, transform=transform)
-
-    elif p['val_db_name'] == 'cifar-100-plc':
-        from data.cifar_plc import CIFAR100
-        dataset = CIFAR100(root=p['data_path'], split='test', train_ratio=0.9, trust_ratio=0, download=True, transform=transform)
+    elif p['val_db_name'] in ['mini_imagenet_red','mini_imagenet32_red']:
+        from data.redblue import MiniImagenet
+        dataset = MiniImagenet(root_dir=p['data_path'], transform=transform, meta_info=meta_info, num_classes=p['num_classes'], color='red')
 
     else:
         raise ValueError('Invalid validation dataset {}'.format(p['val_db_name']))
@@ -336,6 +313,13 @@ def get_train_transformations(p):
         trnfs.append(transforms.ToTensor())
         trnfs.append(transforms.Normalize(**p['augmentation_kwargs']['normalize']))
         return transforms.Compose(trnfs)
+    elif p['augmentation_strategy'] == 'dividemix_red_mini_imagenet':
+        trnfs = []
+        trnfs.append(transforms.RandomResizedCrop(**p['augmentation_kwargs']['random_resized_crop']))
+        trnfs.append(transforms.RandomHorizontalFlip())
+        trnfs.append(transforms.ToTensor())
+        trnfs.append(transforms.Normalize(**p['augmentation_kwargs']['normalize']))
+        return transforms.Compose(trnfs)
     
     else:
         raise ValueError('Invalid augmentation strategy {}'.format(p['augmentation_strategy']))
@@ -345,6 +329,7 @@ def get_val_transformations(p):
     trnfs = []
     if 'resize' in p['augmentation_kwargs'].keys():
         trnfs = [transforms.Resize(p['augmentation_kwargs']['resize'])]
+    if p['augmentation_strategy'] != 'dividemix_red_mini_imagenet':
     trnfs.append(transforms.CenterCrop(p['augmentation_kwargs']['crop_size']))
     trnfs.append(transforms.ToTensor())
     trnfs.append(transforms.Normalize(**p['augmentation_kwargs']['normalize']))

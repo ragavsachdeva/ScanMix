@@ -319,8 +319,6 @@ def scanmix_warmup(epoch,net,optimizer,dataloader,criterion, conf_penalty, noise
             L = loss + penalty      
         elif noise_mode=='sym':   
             L = loss
-        elif noise_mode in ['1','2','3']:
-            L = loss
         L.backward()  
         optimizer.step() 
         losses.update(L.item()) 
@@ -341,7 +339,7 @@ def scanmix_big_warmup(p,epoch,net,optimizer,dataloader,criterion, conf_penalty,
             input_features = net(inputs, forward_pass='backbone')
         outputs = net(input_features, forward_pass='dm_head')      
         loss = criterion(outputs, labels)  
-        if p['dataset'] == 'webvision':   
+        if p['dataset'] in  ['webvision', 'mini_imagenet_red', 'mini_imagenet32_red']:   
             L = loss
         else:
             raise NotImplementedError()

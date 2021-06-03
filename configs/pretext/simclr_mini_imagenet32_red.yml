@@ -1,23 +1,23 @@
 # Setup
 setup: simclr
-data_path: ../data/cifar10/
-dataset: cifar10
+to_noisy_dataset: False # does not use labels
 
 # Model
-backbone: resnet34
+backbone: resnet18
 model_kwargs:
    head: mlp
    features_dim: 128
 
 # Dataset
-train_db_name: cifar-10-plc
-val_db_name: cifar-10-plc
-num_classes: 10
+data_path: '../../datasets/red_blue/mini-imagenet/'
+train_db_name: mini_imagenet32_red
+val_db_name: mini_imagenet32_red
+num_classes: 100
 
 # Loss
 criterion: simclr
 criterion_kwargs:
-   temperature: 0.1 
+   temperature: 0.07
 
 # Hyperparameters
 epochs: 500
@@ -30,9 +30,9 @@ optimizer_kwargs:
 scheduler: cosine
 scheduler_kwargs:
    lr_decay_rate: 0.1
-batch_size: 512 
+batch_size: 128 
 num_workers: 8
-to_noisy_dataset: False  # labels are not used
+
 
 # Transformations
 augmentation_strategy: simclr 
@@ -50,6 +50,6 @@ augmentation_kwargs:
    random_grayscale: 
       p: 0.2
    normalize:
-      mean: [0.4914, 0.4822, 0.4465]
-      std: [0.2023, 0.1994, 0.2010]
+      mean: [0.485, 0.456, 0.406]
+      std: [0.229, 0.224, 0.225]
    crop_size: 32

@@ -8,7 +8,7 @@ In Pattern Recognition 2023
 
 The pipeline for running ScanMix is the following:
 
-For CIFAR:
+### For CIFAR:
 
 Step 1:
 
@@ -27,7 +27,7 @@ Step 3:
 (semantic) `python ScanMix.py --r 0.4 --noise_mode semantic_[vgg/resnet/densenet] --config_env configs/env.yml --config_exp configs/scanmix/<config_file.yml>`
 
 
-For Webvision
+### For Webvision
 
 Step 0:
 

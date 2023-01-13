@@ -1,6 +1,10 @@
-# ScanMix
+# [ScanMix](https://arxiv.org/abs/2103.11395)
 
-Disclaimer: We're currently in the process of refactoring and uploading code to this repository. The current version is not thoroughly tested and may break.
+[[arXiv]](https://arxiv.org/abs/2103.11395)
+
+In Pattern Recognition 2023 
+
+[Ragav Sachdeva](https://ragavsachdeva.github.io/), [Filipe R. Cordeiro](https://scholar.google.com/citations?user=w-c3Z2EAAAAJ&hl=en&oi=ao), [Vasileios Belagiannis](https://scholar.google.com/citations?hl=en&user=4IlWd90AAAAJ), [Ian Reid](https://scholar.google.com/citations?hl=en&user=ATkNLcQAAAAJ), [Gustavo Carneiro](https://scholar.google.com/citations?hl=en&user=E0TtOWAAAAAJ).
 
 The pipeline for running ScanMix is the following:
 
